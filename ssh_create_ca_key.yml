@@ -1,0 +1,16 @@
+---
+- hosts: localhost
+  sudo: yes
+  vars:
+    ca_key_name: host_ca
+  
+  tasks:
+  - name: turn off the host key checking only once for initial key deployment
+    local_action: shell export ANSIBLE_HOST_KEY_CHECKING=False
+
+  - name: creating a host key on the ansible server
+    local_action: shell chdir=/etc/ssh ssh-keygen -f {{ca_key_name}} -q -N ""
+
+  - name: copy root ca's pub key to ansible's known_hosts file
+    local_action: shell echo "@cert-authority * $(cat /etc/ssh/{{ca_key_name}}.pub)" \
+      > /home/ansible/.ssh/known_hosts

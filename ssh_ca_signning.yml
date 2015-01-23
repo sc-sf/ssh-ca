@@ -1,0 +1,53 @@
+# file: ssh_ca_signning.yml
+
+# run the following command in a directory where this playbook is located
+# ansible-playbook -i inventory_file ssh_ca_signning.yml --limit server1.my.local
+---
+- hosts: all
+  remote_user: ansible
+  sudo: yes
+  vars:
+    cert_dir: /tmp
+    ca_key_dir: /etc/ssh
+    certlogger: cert-signing.log
+    sshd_cfg: sshdconfig.j2
+
+  tasks:
+  - name: make sure no preexisting keys conflicting with new ones
+    local_action: shell rm -f {{cert_dir}}/{{inventory_hostname}}*
+
+  - name: generate host key pair # -q = silience; -N ""= no passphrase
+    local_action: shell ssh-keygen -f {{cert_dir}}/{{inventory_hostname}} -q -N "" 
+
+  - name: sign key and generate certificate  
+    local_action: shell ssh-keygen -s {{ca_key_dir}}/host_ca -I {{inventory_hostname}} \ 
+      -Z {{ansible_hostname}},{{inventory_hostname}} -h -V +104w {{cert_dir}}/{{inventory_hostname}}.pub
+    register: eventlog
+
+  - name: log the key signing event
+    local_action: shell echo {{eventlog}} >> {{certlogger}}
+
+# There's a bug in the current version of running ansible where the copy module (even with sudo) is given 
+# permission denied error message and thus prevented access to file having 600 permission of another 
+# owner. The temp fix here is to change permission from 600 to 644 and then change it back during copy.
+# The bug is described here - https://github.com/ansible/ansible/issues/6948 
+  - name: change permission of private key before copying
+    local_action: shell chmod 644 {{cert_dir}}/{{inventory_hostname}} 
+
+  - name: copying private key and change permission back to 600
+    copy: src={{cert_dir}}/{{inventory_hostname}} dest=/etc/ssh force=yes mode=600
+
+  - name: copying certificate and leave permission as 644
+    copy: src={{cert_dir}}/{{inventory_hostname}}-cert.pub dest=/etc/ssh force=yes
+
+# Configuring /etc/ssh/sshd_config should be done at the end or else it would interrupt or
+# terminate the current ssh connection.
+  - name: updating sshd_config 
+    template: src={{sshd_cfg}} dest=/etc/ssh/sshd_config owner=0 group=0 mode=600
+    notify:
+    - restart sshd
+
+  handlers:
+    - name: restart sshd
+      service: name=sshd state=restarted
+    
