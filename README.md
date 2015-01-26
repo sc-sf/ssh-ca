@@ -1,5 +1,11 @@
 How to use SSH Certificate Authority to centralize management of host keys with Ansible
 
+Download a copy of this repo via this command:
+
+     git clone git://github.com/sc-sf/ssh-ca.git
+
+
+
 Create key and certificate for the CA and make ansible server trust any keys signed by CA
 
  # file: ssh_create_ca_key.yml
