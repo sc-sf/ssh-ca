@@ -21,7 +21,7 @@
 
   - name: sign key and generate certificate  
     local_action: shell ssh-keygen -s {{ca_key_dir}}/host_ca -I {{inventory_hostname}} \ 
-      -Z {{ansible_hostname}},{{inventory_hostname}} -h -V +104w {{cert_dir}}/{{inventory_hostname}}.pub
+      -h -V +104w {{cert_dir}}/{{inventory_hostname}}.pub # -Z {{ansible_hostname}},{{inventory_hostname}} 
     register: eventlog
 
   - name: log the key signing event
