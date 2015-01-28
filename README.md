@@ -30,16 +30,6 @@ Prerequisite and assumptions
      server1.my.local
      server2.my.local
 
-* the parent ssh-ca directory should contain all the necessary files
-
-     ssh-ca
-     ├── ansible.cfg
-     ├── cert-signing.log
-     ├── inventory_file
-     ├── ssh_ca_signning.yml
-     ├── ssh_create_ca_key.yml
-     └── sshdconfig.j2
-
 
 The playbooks included here actually contain mostly ad-hoc shell commands. It's imaginable that it won't be long before someone come up with a full blown ansible module for key signing purpose.
 
